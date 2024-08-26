@@ -49,6 +49,10 @@ def get_exif(image):
             decoded_attr = TAGS.get(attr, attr)
             if decoded_attr in _exif_attrs:
                 _exif[decoded_attr] = value
+                # 我的镜头后面有一堆\x00，不会是假货吧哈哈哈
+                if type(value) == str:
+                    if value.find("VR") != -1:
+                        _exif[decoded_attr] = value.split("\x00")[0]
 
     return _exif,exif_dict
 
@@ -101,10 +105,14 @@ def make_exif_image(exif):
     brand_draw.text((0, model_mask.size[1] + GAP_PIXEL), lens_model, font=font, fill='gray')
 
     # 参数
-    focal_length = str(int(exif['FocalLength'])) + 'mm'
-    f_number = 'F' + str(exif['FNumber'])
+    # z30这种半画幅要x1.5
+    if model == "NIKON Z 30":
+        focal_length = str(int(int(exif['FocalLength']) * 1.5)) + 'mm'
+    else:
+        focal_length = str(int(exif['FocalLength'])) + 'mm'
+    f_number = 'F/' + str(exif['FNumber'])
     exposure_time = str(exif['ExposureTime'].real)
-    iso = 'ISO' + str(exif['ISOSpeedRatings'])
+    iso = 'ISO ' + str(exif['ISOSpeedRatings'])
     shot_param = '  '.join((focal_length, f_number, exposure_time, iso))
 
     original_date_time = datetime.strftime(parse_datetime(exif['DateTimeOriginal']), '%Y-%m-%d %H:%M')
@@ -133,7 +141,7 @@ def make_exif_image(exif):
          math.floor(original_width * font_ratio)), Image.Resampling.LANCZOS)
     if logo_enable:
         logo = append_logo(exif_img, exif)
-        exif_img.paste(logo, (exif_img.width - logo.width - GAP_PIXEL//4 - shot_param_img.width - right_margin, math.floor((all_ratio - font_ratio) / 2 * original_width)))
+        exif_img.paste(logo, (exif_img.width - logo.width - GAP_PIXEL//4 - shot_param_img.width - right_margin-40, math.floor((all_ratio - font_ratio) / 2 * original_width)))
 
     exif_img.paste(brand_img, (left_margin*2, math.floor((all_ratio - font_ratio) / 2 * original_width)))
     exif_img.paste(shot_param_img, (exif_img.width - shot_param_img.width - right_margin,

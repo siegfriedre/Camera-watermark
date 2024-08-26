@@ -10,7 +10,7 @@ logo:
     makes:
         nikon:
             id: NIKON
-            path: ./logos/nikon1.png
+            path: ./logos/nikon.png
         canon:
             id: Canon
             path: ./logos/canon.png
